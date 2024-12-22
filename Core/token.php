@@ -30,9 +30,9 @@ class Token
             'nbf' => $timestamp,
             'exp' => $timestamp + 86400,
         ];
-        $input['csrf'] = self::csrfToken($timestamp);
         if (isset($input))
             $payload['data'] = $input;
+        self::csrfToken($timestamp);
         return $payload;
     }
 
@@ -58,17 +58,17 @@ class Token
         return isset($_COOKIE['token']) ? self::decodePayload(self::getPayload($_COOKIE['token']))->data->url : Configs::homePageUrl();
     }
 
-    public static function csrfToken($timestamp): string
+    public static function csrfToken($timestamp): void
     {
-        $csrfToken = md5($timestamp);
-        setcookie('csrf', $csrfToken, 0, '/');
-        return md5($csrfToken);
+        $timestamp = md5($timestamp);
+        setcookie('csrf', strrev(md5($timestamp)), 0, '/');
     }
 
     public static function checkCsrf(): void
     {
-        $csrfToken = self::checkIfTokenExists()->decodePayload(self::getPayload($_COOKIE['token']))->data->csrf ?? null;
-        if (!array_key_exists('csrf', $_COOKIE) || !hash_equals($csrfToken, md5($_COOKIE['csrf'])))
+        $timestamp = self::checkIfTokenExists()->decodePayload(self::getPayload($_COOKIE['token']))->iat ?? null;
+        $timestamp = md5($timestamp);
+        if (!isset($_COOKIE['csrf']) || !hash_equals(strrev(md5($timestamp)), $_COOKIE['csrf']))
             self::invalidToken();
     }
 
