@@ -13,7 +13,7 @@ include HEADER;
 </form>
 <span id="answerTicketErrorMessage"></span>
 <?php
-if (strpos($_REQUEST['url'], '/ticket/answer')):
+if (strpos($_GET['url'], '/ticket/answer')):
 ?>
     <script src="assets/js/answer.js"></script>
 <?php

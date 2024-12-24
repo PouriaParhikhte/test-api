@@ -15,7 +15,7 @@ class TicketIndexController extends Controller
     public function index()
     {
         try {
-            $tickets = Tickets::getInstance()->index(Token::getUserId());
+            $tickets = Tickets::getInstance()->index(Token::fetchValueFromPayload('data', 'userId'));
             $input = [
                 'menu' => UserPanelMenu::getInstance()->panelMenuBuilder(),
                 'tickets' => $tickets->result ?? null,

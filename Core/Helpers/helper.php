@@ -29,7 +29,7 @@ class Helper
     {
         $logs = [
             'userIp' => $_SERVER['REMOTE_ADDR'],
-            'url' => $_REQUEST['url'] ?? Configs::homePageUrl(),
+            'url' => $_GET['url'] ?? Configs::homePageUrl(),
             'responseCode' => http_response_code()
         ];
         if (isset($_COOKIE['message']))
@@ -63,7 +63,7 @@ class Helper
     {
         if ($message !== '')
             Token::generate([$index => $message]);
-        $url = Configs::baseUrl() . Token::getUrl();
+        $url = Configs::baseUrl() . Token::fetchValueFromPayload('data', 'url');
         header("location:$url", true, $responseCode);
         exit;
     }
@@ -103,7 +103,7 @@ class Helper
 
     public static function invalidRequest(): never
     {
-        if (!Token::getUserId())
+        if (!Token::fetchValueFromPayload('data', 'userId'))
             Token::removeCookie('token');
         http_response_code(400);
         exit(json_encode('Invalid request!'));

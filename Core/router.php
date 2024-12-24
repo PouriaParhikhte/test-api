@@ -55,7 +55,7 @@ class Router extends Route
     private function postRequests($url): void
     {
         match ($url) {
-            'api/user/signup' => $this->checkCsrfToken()->loadControllerAndAction(SignupController::class, 'create', $_POST),
+            'api/user/signup' => $this->verifyToken()->checkCsrfToken()->loadControllerAndAction(SignupController::class, 'create', $_POST),
             'api/user/login' => $this->loadControllerAndAction(LoginController::class, 'login', $_POST),
             'api/ticket/register' => $this->isUser()->loadControllerAndAction(RegisterTicketController::class, 'create', $_POST),
             'api/ticket/answerTicket' => $this->isAdmin()->verifyToken()->loadControllerAndAction(AnswerTicketController::class, 'create', $_POST),
@@ -79,14 +79,14 @@ class Router extends Route
 
     private function isAdmin()
     {
-        if (Token::getRoleId() !== 1)
+        if (Token::fetchValueFromPayload('roleId') !== 1)
             Helper::invalidRequest();
         return $this;
     }
 
     private function isUser()
     {
-        if (Token::getRoleId() !== 2)
+        if (Token::fetchValueFromPayload('roleId') !== 2)
             Helper::invalidRequest();
         return $this;
     }

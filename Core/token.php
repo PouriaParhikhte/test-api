@@ -12,11 +12,13 @@ class Token
     public static function generate(array $input = null): void
     {
         if (Helper::getRequestMethod())
-            $input['url'] = $_REQUEST['url'] ?? Configs::homePageUrl();
-        $input['userId'] = $input['userId'] ?? self::getUserId();
-        $input['roleId'] = $input['roleId'] ?? self::getRoleId();
+            $input['url'] = $_GET['url'] ?? Configs::homePageUrl();
+        $input['userId'] = $input['userId'] ?? self::fetchValueFromPayload('userId');
+        $input['roleId'] = $input['roleId'] ?? self::fetchValueFromPayload('roleId');
         $payload = self::payload($input);
         $secretKey = self::secretKey($payload['iat']);
+        $payload['csrf'] = md5($secretKey . $payload['iat']);
+        $payload['ua'] = md5($_SERVER['HTTP_USER_AGENT'] . $payload['iat']);
         $cookieValue = JWT::encode($payload, $secretKey, 'HS256');
         setcookie('token', $cookieValue, 0, '/');
     }
@@ -31,52 +33,30 @@ class Token
             'exp' => $timestamp + 86400,
         ];
         if (isset($input))
-            $payload['data'] = $input;
-        self::csrfToken($timestamp);
+            $payload = array_merge($payload, $input);
         return $payload;
     }
 
-    public static function getUserId(): int
+    public static function fetchValueFromPayload($index)
     {
-        return isset($_COOKIE['token']) ? self::decodePayload(self::getPayload($_COOKIE['token']))->data->userId : 0;
-    }
-
-    public static function getRoleId(): int
-    {
-        return isset($_COOKIE['token']) ? self::decodePayload(self::getPayload($_COOKIE['token']))->data->roleId : 0;
-    }
-
-    public static function getMessage($index): string|null
-    {
-        if (isset($_COOKIE['token']))
-            return self::decodePayload(self::getPayload($_COOKIE['token']))->data->$index ?? '';
-        return null;
-    }
-
-    public static function getUrl(): string
-    {
-        return isset($_COOKIE['token']) ? self::decodePayload(self::getPayload($_COOKIE['token']))->data->url : Configs::homePageUrl();
-    }
-
-    public static function csrfToken($timestamp): void
-    {
-        $timestamp = md5($timestamp);
-        setcookie('csrf', strrev(md5($timestamp)), 0, '/');
+        if (array_key_exists('token', $_COOKIE))
+            return self::decodePayload(self::getPayload($_COOKIE['token']))->$index ?? '';
     }
 
     public static function checkCsrf(): void
     {
-        $timestamp = self::checkIfTokenExists()->decodePayload(self::getPayload($_COOKIE['token']))->iat ?? null;
-        $timestamp = md5($timestamp);
-        if (!isset($_COOKIE['csrf']) || !hash_equals(strrev(md5($timestamp)), $_COOKIE['csrf']))
+        $csrf = self::fetchValueFromPayload('csrf');
+        $iat = self::fetchValueFromPayload('iat');
+        $token = md5(self::secretKey($iat) . $iat);
+        if (!hash_equals($csrf, $token))
             self::invalidToken();
     }
 
     public static function secretKey($timestamp = null): string
     {
         if (Helper::postRequestMethod() && self::checkIfTokenExists())
-            $iat = self::decodePayload(self::getPayload($_COOKIE['token']))->iat;
-        return md5($iat ?? $timestamp);
+            $timestamp = self::decodePayload(self::getPayload($_COOKIE['token']))->iat;
+        return md5($timestamp);
     }
 
     public static function verify(): void
@@ -145,6 +125,8 @@ class Token
         try {
             $secretKey = self::secretKey();
             $jwt = JWT::decode($_COOKIE['token'], new Key($secretKey, 'HS256'));
+            if ($jwt->ua !== md5($_SERVER['HTTP_USER_AGENT'] . $jwt->iat))
+                self::invalidToken();
             $token = JWT::encode((array)$jwt, $secretKey, 'HS256');
             return hash_equals($token, $_COOKIE['token']);
         } catch (Exception $exception) {
@@ -155,7 +137,7 @@ class Token
 
     public static function invalidRequest(): never
     {
-        if (!Token::getUserId())
+        if (!Token::fetchValueFromPayload('userId'))
             Token::removeCookie('token');
         http_response_code(400);
         exit(json_encode('Invalid request!'));

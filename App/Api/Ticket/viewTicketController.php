@@ -18,7 +18,7 @@ class ViewTicketController extends Controller
         try {
             $input = [
                 'menu' => UserPanelMenu::getInstance()->panelMenuBuilder(),
-                'ticket' => ViewTicket::getInstance()->fetch(end($this->params), Token::getUserId()) ?? Helper::notFound()
+                'ticket' => ViewTicket::getInstance()->fetch(end($this->params), Token::fetchValueFromPayload('data', 'userId')) ?? Helper::notFound()
             ];
             array_pop($this->params);
             View::render($this->params, $input);

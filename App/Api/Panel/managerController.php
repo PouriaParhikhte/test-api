@@ -13,7 +13,7 @@ class ManagerController extends Controller
     public function index()
     {
         try {
-            $page = (Token::getUserId() !== 0 && Token::getRoleId() === 1) ? 'api/panel/dashboard' : 'api/panel/manager';
+            $page = (Token::fetchValueFromPayload('data', 'userId') !== 0 && Token::fetchValueFromPayload('data', 'roleId') === 1) ? 'api/panel/dashboard' : 'api/panel/manager';
             View::render($page);
         } catch (Exception $exception) {
             Helper::sendMessageOrRedirect($exception->getMessage(), $exception->getCode());

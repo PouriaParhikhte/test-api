@@ -1,6 +1,5 @@
 <?php
 
-use Core\Helpers\Helper;
 use Core\Token;
 
 include HEADER;
@@ -20,17 +19,17 @@ echo $pagination ?? null;
     <input type="password" name="password" id="password">
     <input type="submit" value="ثبت نام">
 </form>
-<span id="signupErrorMessage"><?= Token::getMessage('signupErrorMessage'); ?></span>
+<span id="signupErrorMessage"><?= Token::fetchValueFromPayload('signupErrorMessage'); ?></span>
 <br><br>
 <?php
-if (!Token::getUserId() && Token::getRoleId() !== 2) {
+if (!Token::fetchValueFromPayload('userId') && Token::fetchValueFromPayload('roleId') !== 2) {
 ?>
     <form action="api/user/login" method="post">
         <input type="text" name="username" placeholder="نام کاربری">
         <input type="password" name="password" placeholder="رمز عبور">
         <input type="submit" id="loginButton" value="ورود">
     </form>
-    <span id="loginErrorMessage"><?= Token::getMessage('loginErrorMessage'); ?></span>
+    <span id="loginErrorMessage"><?= Token::fetchValueFromPayload('loginErrorMessage'); ?></span>
 <?php
 }
 include FOOTER;

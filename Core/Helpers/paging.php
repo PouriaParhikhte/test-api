@@ -28,7 +28,7 @@ trait Paging
 
     private function checkPageNumber(&$pageNumber): void
     {
-        $urlArray = isset($_REQUEST['url']) ? explode('/', $_REQUEST['url']) : [];
+        $urlArray = isset($_GET['url']) ? explode('/', $_GET['url']) : [];
         $end = end($urlArray);
         $pageNumber = is_numeric($end) ? (int)$end : 1;
         if ($pageNumber <= 0)

@@ -15,7 +15,7 @@ class GetRoleId extends Select
 
     public function getRoleId()
     {
-        $userId = Token::getUserId();
+        $userId = Token::fetchValueFromPayload('data', 'userId');
         return $this->select()->where(['userId', $userId])->first();
     }
 }
